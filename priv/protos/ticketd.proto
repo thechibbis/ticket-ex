@@ -1,0 +1,36 @@
+syntax = "proto3";
+package ticketd;
+
+message Empty {}
+
+message RaffleCreationRequest {
+    int64 raffleId = 1;
+    ///The amount of tickets that will be created for this raffle
+    int64 ticketCount = 2;
+    int64 initialNumeric = 3;
+}
+message RaffleCreationResponse{
+    ///The amount of tickets that were created. Merely for debugging
+    int64 amount = 1;
+}
+message RaffleTicketRetrievalRequest {
+    int64 raffleId = 1;
+    int64 amount = 2;
+}
+message RaffleTicketRetrievalResponse {
+    uint64 ticketAmount = 1;
+}
+
+message PingRequest { uint64 serial = 1; }
+message PongResult {
+  uint64 serial = 1;
+  uint64 timestamp = 2;
+}
+
+service TicketdServer {
+  // Receives: uint32, returns: the same uint32
+  rpc Ping(PingRequest) returns (PongResult);
+  ///Returns how many tickets were created successfully
+  rpc NotifyRaffleCreation(RaffleCreationRequest) returns (RaffleCreationResponse);
+  rpc RetrieveTickets(RaffleTicketRetrievalRequest) returns (RaffleTicketRetrievalResponse);
+}

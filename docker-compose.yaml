@@ -1,0 +1,11 @@
+services:
+  redis:
+    image: redis:latest # Or a specific version like redis:6.2-alpine
+    ports:
+      - "6379:6379" # Map host port 6379 to container port 6379
+    volumes:
+      - redis_data:/data # Persist Redis data to a named volume
+    command: redis-server --requirepass 123123 # Enable AOF persistence
+
+volumes:
+  redis_data:
