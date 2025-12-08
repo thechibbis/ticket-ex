@@ -30,8 +30,11 @@ defmodule TicketEx.Server.Grpc do
     )
 
     case TicketEx.Ticketd.Worker.create_tickets(raffle_id, ticket_count, initial_numeric) do
-      {:ok, created_amount} ->
+      {:ok, created_amount_list} ->
+        created_amount = created_amount_list |> Enum.sum()
+
         IO.inspect("created #{created_amount} tickets for raffle: #{raffle_id}")
+
         response = %RaffleCreationResponse{amount: created_amount}
         IO.inspect(response, label: "Raffle Creation Response Sent")
         response

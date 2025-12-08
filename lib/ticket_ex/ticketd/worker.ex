@@ -79,7 +79,7 @@ defmodule TicketEx.Ticketd.Worker do
       {:ok, results} ->
         IO.puts("Successfully created #{amount} tickets in Redis")
         IO.puts("Pipeline results: #{inspect(results)}")
-        {:reply, {:ok}, state}
+        {:reply, {:ok, results}, state}
 
       {:error, reason} ->
         IO.puts("Error creating tickets in Redis: #{inspect(reason)}")

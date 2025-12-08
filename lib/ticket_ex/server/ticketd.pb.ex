@@ -320,3 +320,61 @@ defmodule Ticketd.PongResult do
   field :serial, 1, type: :uint64
   field :timestamp, 2, type: :uint64
 end
+
+defmodule Ticketd.TicketdServer.Service do
+  @moduledoc false
+
+  use GRPC.Service, name: "ticketd.TicketdServer", protoc_gen_elixir_version: "0.15.0"
+
+  def descriptor do
+    # credo:disable-for-next-line
+    %Google.Protobuf.ServiceDescriptorProto{
+      name: "TicketdServer",
+      method: [
+        %Google.Protobuf.MethodDescriptorProto{
+          name: "Ping",
+          input_type: ".ticketd.PingRequest",
+          output_type: ".ticketd.PongResult",
+          options: nil,
+          client_streaming: false,
+          server_streaming: false,
+          __unknown_fields__: []
+        },
+        %Google.Protobuf.MethodDescriptorProto{
+          name: "NotifyRaffleCreation",
+          input_type: ".ticketd.RaffleCreationRequest",
+          output_type: ".ticketd.RaffleCreationResponse",
+          options: nil,
+          client_streaming: false,
+          server_streaming: false,
+          __unknown_fields__: []
+        },
+        %Google.Protobuf.MethodDescriptorProto{
+          name: "RetrieveTickets",
+          input_type: ".ticketd.RaffleTicketRetrievalRequest",
+          output_type: ".ticketd.RaffleTicketRetrievalResponse",
+          options: nil,
+          client_streaming: false,
+          server_streaming: false,
+          __unknown_fields__: []
+        }
+      ],
+      options: nil,
+      __unknown_fields__: []
+    }
+  end
+
+  rpc :Ping, Ticketd.PingRequest, Ticketd.PongResult
+
+  rpc :NotifyRaffleCreation, Ticketd.RaffleCreationRequest, Ticketd.RaffleCreationResponse
+
+  rpc :RetrieveTickets,
+      Ticketd.RaffleTicketRetrievalRequest,
+      Ticketd.RaffleTicketRetrievalResponse
+end
+
+defmodule Ticketd.TicketdServer.Stub do
+  @moduledoc false
+
+  use GRPC.Stub, service: Ticketd.TicketdServer.Service
+end
