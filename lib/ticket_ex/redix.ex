@@ -27,6 +27,7 @@ defmodule TicketEx.Redix do
         Supervisor.child_spec(
           {Redix,
            name: :"redix_#{index}",
+           timeout: 60_000,
            username: redis_user,
            password: redis_pass,
            host: redis_host,
@@ -52,6 +53,16 @@ defmodule TicketEx.Redix do
   """
   def pipeline(commands) do
     Redix.pipeline(:"redix_#{random_index()}", commands)
+  end
+
+  def chunked_pipeline(commands) do
+    IO.inspect(length(commands))
+
+    commands
+    |> Enum.chunk_every(100)
+    |> Enum.map(fn c ->
+      Redix.pipeline!(:"redix_#{random_index()}", c)
+    end)
   end
 
   # Returns a random index from the pool

@@ -2,7 +2,7 @@ defmodule TicketEx.Ticketd.Worker do
   use GenServer
 
   def start_link(name) do
-    GenServer.start_link(__MODULE__, %{}, name: name)
+    GenServer.start_link(__MODULE__, %{}, name: name, timeout: :infinity)
   end
 
   def start_child(name) do
@@ -15,7 +15,11 @@ defmodule TicketEx.Ticketd.Worker do
     case start_child(worker_name) do
       {:ok, pid} ->
         try do
-          GenServer.call(worker_name, {:create_tickets, chunk_name, amount, initial_numeric})
+          GenServer.call(
+            worker_name,
+            {:create_tickets, chunk_name, amount, initial_numeric},
+            :infinity
+          )
         after
           DynamicSupervisor.terminate_child(TicketEx.Ticketd.Supervisor, pid)
         end
@@ -47,7 +51,7 @@ defmodule TicketEx.Ticketd.Worker do
       id: name,
       start: {__MODULE__, :start_link, [name]},
       restart: :temporary,
-      shutdown: 5000,
+      timeout: :infinity,
       type: :worker
     }
   end
@@ -59,32 +63,32 @@ defmodule TicketEx.Ticketd.Worker do
 
   @impl true
   def handle_call({:create_tickets, chunk_name, amount, initial_numeric}, _from, state) do
-    IO.puts("Creating #{amount} tickets in chunk #{chunk_name} starting from #{initial_numeric}")
+    # chunk_size = Bitwise.bsl(1, 15)
+    chunk_size = 10000
 
-    chunk_size = Bitwise.bsl(1, 15)
+    {time_us, commands} =
+      :timer.tc(fn ->
+        initial_numeric..(initial_numeric + amount - 1)
+        |> Enum.chunk_every(chunk_size)
+        |> Enum.map(fn chunk ->
+          tickets =
+            Enum.map(chunk, &Integer.to_string/1)
 
-    commands =
-      initial_numeric..(initial_numeric + amount - 1)
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.map(fn chunk ->
-        tickets =
-          Enum.map(chunk, &Integer.to_string/1)
-
-        ["SADD", chunk_name | tickets]
+          ["SADD", chunk_name | tickets]
+        end)
       end)
 
-    IO.inspect(commands)
+    IO.inspect(time_us / 1000,
+      label: "Time needed to mount the commands (SADD chunk = #{chunk_size})"
+    )
 
-    case TicketEx.Redix.pipeline(commands) do
-      {:ok, results} ->
-        IO.puts("Successfully created #{amount} tickets in Redis")
-        IO.puts("Pipeline results: #{inspect(results)}")
-        {:reply, {:ok, results}, state}
+    {time_us, _} = :timer.tc(fn -> TicketEx.Redix.chunked_pipeline(commands) end)
 
-      {:error, reason} ->
-        IO.puts("Error creating tickets in Redis: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
-    end
+    IO.inspect(time_us / 1000,
+      label: "Time needed to execute the commands (pipeline chunk = 1_000_000)"
+    )
+
+    {:reply, {:ok, [0, amount]}, state}
   end
 
   @impl true

@@ -16,52 +16,49 @@ defmodule TicketEx.Server.Grpc do
     response
   end
 
-  def notify_raffle_creation(
-        %RaffleCreationRequest{
-          raffleId: raffle_id,
-          ticketCount: ticket_count,
-          initialNumeric: initial_numeric
-        },
-        _stream
-      ) do
-    IO.inspect(
-      %{raffle_id: raffle_id, ticket_count: ticket_count, initial_numeric: initial_numeric},
-      label: "Raffle Creation Request Received"
-    )
+  @spec notify_raffle_creation(
+          RaffleCreationRequest.t(),
+          GRPC.Server.Stream.t()
+        ) :: any()
+  def notify_raffle_creation(request, materializer) do
+    request
+    |> GRPC.Stream.unary(materializer: materializer)
+    |> GRPC.Stream.map(fn %RaffleCreationRequest{} = req ->
+      case TicketEx.Ticketd.Worker.create_tickets(
+             req.raffleId,
+             req.ticketCount,
+             req.initialNumeric
+           ) do
+        {:ok, created_amount_list} ->
+          created_amount = created_amount_list |> Enum.sum()
+          %RaffleCreationResponse{amount: created_amount}
 
-    case TicketEx.Ticketd.Worker.create_tickets(raffle_id, ticket_count, initial_numeric) do
-      {:ok, created_amount_list} ->
-        created_amount = created_amount_list |> Enum.sum()
-
-        IO.inspect("created #{created_amount} tickets for raffle: #{raffle_id}")
-
-        response = %RaffleCreationResponse{amount: created_amount}
-        IO.inspect(response, label: "Raffle Creation Response Sent")
-        response
-
-      {:error, reason} ->
-        IO.inspect(reason, label: "Error creating tickets")
-        %RaffleCreationResponse{amount: 0}
-    end
+        {:error, reason} ->
+          IO.inspect(reason, label: "Error creating tickets")
+          %RaffleCreationResponse{amount: 0}
+      end
+    end)
+    |> GRPC.Stream.run()
   end
 
-  def retrieve_tickets(
-        %RaffleTicketRetrievalRequest{raffleId: raffle_id, amount: amount},
-        _stream
-      ) do
-    IO.inspect(%{raffle_id: raffle_id, amount: amount},
-      label: "Raffle Ticket Retrieval Request Received"
-    )
+  @spec retrieve_tickets(
+          RaffleTicketRetrievalRequest.t(),
+          GRPC.Server.Stream.t()
+        ) :: any()
+  def retrieve_tickets(request, materializer) do
+    request
+    |> GRPC.Stream.unary(materializer: materializer)
+    |> GRPC.Stream.map(fn %RaffleTicketRetrievalRequest{} = req ->
+      case TicketEx.Ticketd.Worker.retrieve_tickets(req.raffleId, req.amount) do
+        {:ok, tickets} ->
+          ticket_amount = length(tickets)
+          %RaffleTicketRetrievalResponse{ticketAmount: ticket_amount}
 
-    case TicketEx.Ticketd.Worker.retrieve_tickets(raffle_id, amount) do
-      {:ok, ticket_amount} ->
-        response = %RaffleTicketRetrievalResponse{ticketAmount: ticket_amount}
-        IO.inspect(response, label: "Raffle Ticket Retrieval Response Sent")
-        response
-
-      {:error, reason} ->
-        IO.inspect(reason, label: "Error retrieving tickets")
-        %RaffleTicketRetrievalResponse{ticketAmount: 0}
-    end
+        {:error, reason} ->
+          IO.inspect(reason, label: "Error retrieving tickets")
+          %RaffleTicketRetrievalResponse{ticketAmount: 0}
+      end
+    end)
+    |> GRPC.Stream.run()
   end
 end

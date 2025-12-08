@@ -5,7 +5,7 @@ services:
       - "6379:6379" # Map host port 6379 to container port 6379
     volumes:
       - redis_data:/data # Persist Redis data to a named volume
-    command: redis-server --requirepass 123123 # Enable AOF persistence
+    command: redis-server --requirepass 123123 --maxmemory 4gb
 
 volumes:
   redis_data:
