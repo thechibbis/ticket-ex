@@ -6,9 +6,21 @@
 
 - Create Ticket -> new ticketd supervisor + genserver (worker)
 
-- ETS as a redis alternative
 - ecto for postgres communication
 - [grpc-elixir](https://github.com/elixir-grpc/grpc) for grpc communication
+
+## How to run
+
+```bash
+mix deps.get
+```
+
+```
+iex -S mix
+```
+
+it will start listening to `localhost:50051`
+obs: reflections enabled
 
 ## Installation
 
