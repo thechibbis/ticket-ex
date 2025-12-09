@@ -14,7 +14,7 @@ if config_env() == :prod do
     host: System.get_env("REDIS_HOST", "localhost"),
     port: System.get_env("REDIS_PORT", "6379"),
     database: System.get_env("REDIS_DATABASE", "0"),
-    pool_size: System.get_env("REDIS_POOL_SIZE", "15")
+    pool_size: String.to_integer(System.get_env("REDIS_POOL_SIZE", "15"))
 
   config :ticket_ex, TicketEx.Repo,
     username: System.get_env("DB_USERNAME", "postgres"),
@@ -22,5 +22,5 @@ if config_env() == :prod do
     database: System.get_env("DB_NAME", "ticket_ex_prod"),
     hostname: System.get_env("DB_HOSTNAME", "localhost"),
     port: System.get_env("DB_PORT", "5432"),
-    pool_size: System.get_env("DB_POOL_SIZE", "15")
+    pool_size: String.to_integer(System.get_env("DB_POOL_SIZE", "15"))
 end
