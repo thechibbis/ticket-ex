@@ -18,6 +18,8 @@ config :ticket_ex,
     pool_size: 15
   ]
 
+config :ticket_ex, ecto_repos: [TicketEx.Repo]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

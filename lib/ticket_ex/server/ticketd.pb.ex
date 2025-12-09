@@ -142,11 +142,25 @@ defmodule Ticketd.RaffleTicketRetrievalRequest do
       name: "RaffleTicketRetrievalRequest",
       field: [
         %Google.Protobuf.FieldDescriptorProto{
-          name: "raffleId",
+          name: "amount",
           extendee: nil,
           number: 1,
           label: :LABEL_OPTIONAL,
           type: :TYPE_INT64,
+          type_name: nil,
+          default_value: nil,
+          options: nil,
+          oneof_index: nil,
+          json_name: "amount",
+          proto3_optional: nil,
+          __unknown_fields__: []
+        },
+        %Google.Protobuf.FieldDescriptorProto{
+          name: "raffleId",
+          extendee: nil,
+          number: 2,
+          label: :LABEL_OPTIONAL,
+          type: :TYPE_STRING,
           type_name: nil,
           default_value: nil,
           options: nil,
@@ -156,16 +170,30 @@ defmodule Ticketd.RaffleTicketRetrievalRequest do
           __unknown_fields__: []
         },
         %Google.Protobuf.FieldDescriptorProto{
-          name: "amount",
+          name: "tenantId",
           extendee: nil,
-          number: 2,
+          number: 3,
           label: :LABEL_OPTIONAL,
-          type: :TYPE_INT64,
+          type: :TYPE_STRING,
           type_name: nil,
           default_value: nil,
           options: nil,
           oneof_index: nil,
-          json_name: "amount",
+          json_name: "tenantId",
+          proto3_optional: nil,
+          __unknown_fields__: []
+        },
+        %Google.Protobuf.FieldDescriptorProto{
+          name: "customerId",
+          extendee: nil,
+          number: 4,
+          label: :LABEL_OPTIONAL,
+          type: :TYPE_STRING,
+          type_name: nil,
+          default_value: nil,
+          options: nil,
+          oneof_index: nil,
+          json_name: "customerId",
           proto3_optional: nil,
           __unknown_fields__: []
         }
@@ -182,8 +210,10 @@ defmodule Ticketd.RaffleTicketRetrievalRequest do
     }
   end
 
-  field :raffleId, 1, type: :int64
-  field :amount, 2, type: :int64
+  field :amount, 1, type: :int64
+  field :raffleId, 2, type: :string
+  field :tenantId, 3, type: :string
+  field :customerId, 4, type: :string
 end
 
 defmodule Ticketd.RaffleTicketRetrievalResponse do

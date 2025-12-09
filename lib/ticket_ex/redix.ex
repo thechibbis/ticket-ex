@@ -1,4 +1,6 @@
 defmodule TicketEx.Redix do
+  require Logger
+
   @moduledoc """
   Redis connection pool using Redix.
   """
@@ -45,24 +47,22 @@ defmodule TicketEx.Redix do
   Executes a command on a random Redis connection from the pool.
   """
   def command(command) do
-    Redix.command(:"redix_#{random_index()}", command)
+    Redix.command(:"redix_#{random_index()}", command, timeout: 30_000)
+  end
+
+  def command!(command) do
+    Redix.command!(:"redix_#{random_index()}", command, timeout: 30_000)
   end
 
   @doc """
   Executes a pipeline of commands on a random Redis connection from the pool.
   """
   def pipeline(commands) do
-    Redix.pipeline(:"redix_#{random_index()}", commands)
+    Redix.pipeline(:"redix_#{random_index()}", commands, timeout: 30_000)
   end
 
-  def chunked_pipeline(commands) do
-    IO.inspect(length(commands))
-
-    commands
-    |> Enum.chunk_every(100)
-    |> Enum.map(fn c ->
-      Redix.pipeline!(:"redix_#{random_index()}", c)
-    end)
+  def pipeline!(commands) do
+    Redix.pipeline!(:"redix_#{random_index()}", commands, timeout: 30_000)
   end
 
   # Returns a random index from the pool

@@ -29,7 +29,12 @@ defmodule TicketEx.MixProject do
       {:grpc, "~> 0.11"},
       {:protox, "~> 2.0"},
       {:protobuf, "~> 0.14"},
-      {:grpc_reflection, "~> 0.3"}
+      {:grpc_reflection, "~> 0.3"},
+      {:ecto_sql, "~> 3.0"},
+      {:postgrex, ">= 0.0.0"},
+      {:eflambe, "~> 0.3.2", only: :dev},
+      {:meck, "~> 0.9.2", only: [:test, :dev]},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 end

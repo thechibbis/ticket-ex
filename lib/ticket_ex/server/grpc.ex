@@ -25,7 +25,6 @@ defmodule TicketEx.Server.Grpc do
     |> GRPC.Stream.unary(materializer: materializer)
     |> GRPC.Stream.map(fn %RaffleCreationRequest{} = req ->
       case TicketEx.Ticketd.Worker.create_tickets(
-             req.raffleId,
              req.ticketCount,
              req.initialNumeric
            ) do
@@ -49,7 +48,12 @@ defmodule TicketEx.Server.Grpc do
     request
     |> GRPC.Stream.unary(materializer: materializer)
     |> GRPC.Stream.map(fn %RaffleTicketRetrievalRequest{} = req ->
-      case TicketEx.Ticketd.Worker.retrieve_tickets(req.raffleId, req.amount) do
+      case TicketEx.Ticketd.Worker.retrieve_tickets(
+             req.raffleId,
+             req.tenantId,
+             req.customerId,
+             req.amount
+           ) do
         {:ok, tickets} ->
           ticket_amount = length(tickets)
           %RaffleTicketRetrievalResponse{ticketAmount: ticket_amount}

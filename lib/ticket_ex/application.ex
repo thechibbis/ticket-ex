@@ -8,6 +8,7 @@ defmodule TicketEx.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      TicketEx.Repo,
       TicketEx.Redix,
       TicketEx.Ticketd.Supervisor,
       GrpcReflection,

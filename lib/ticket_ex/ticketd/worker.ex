@@ -1,5 +1,9 @@
 defmodule TicketEx.Ticketd.Worker do
+  require Logger
   use GenServer
+
+  alias TicketEx.Ticketd.Service,
+    as: TicketdService
 
   def start_link(name) do
     GenServer.start_link(__MODULE__, %{}, name: name, timeout: :infinity)
@@ -9,7 +13,7 @@ defmodule TicketEx.Ticketd.Worker do
     DynamicSupervisor.start_child(TicketEx.Ticketd.Supervisor, {__MODULE__, name})
   end
 
-  def create_tickets(chunk_name, amount, initial_numeric) do
+  def create_tickets(amount, initial_numeric) do
     worker_name = :"ticket_worker_#{:erlang.unique_integer()}"
 
     case start_child(worker_name) do
@@ -17,7 +21,7 @@ defmodule TicketEx.Ticketd.Worker do
         try do
           GenServer.call(
             worker_name,
-            {:create_tickets, chunk_name, amount, initial_numeric},
+            {:create_tickets, amount, initial_numeric},
             :infinity
           )
         after
@@ -29,13 +33,17 @@ defmodule TicketEx.Ticketd.Worker do
     end
   end
 
-  def retrieve_tickets(chunk_name, amount) do
+  def retrieve_tickets(raffle_id, tenant_id, customer_id, amount) do
     worker_name = :"ticket_worker_#{:erlang.unique_integer()}"
 
     case start_child(worker_name) do
       {:ok, pid} ->
         try do
-          GenServer.call(worker_name, {:retrieve_tickets, chunk_name, amount})
+          GenServer.call(
+            worker_name,
+            {:retrieve_tickets, raffle_id, tenant_id, customer_id, amount},
+            :infinity
+          )
         after
           DynamicSupervisor.terminate_child(TicketEx.Ticketd.Supervisor, pid)
         end
@@ -62,49 +70,16 @@ defmodule TicketEx.Ticketd.Worker do
   end
 
   @impl true
-  def handle_call({:create_tickets, chunk_name, amount, initial_numeric}, _from, state) do
-    # chunk_size = Bitwise.bsl(1, 15)
-    chunk_size = 10000
-
-    {time_us, commands} =
-      :timer.tc(fn ->
-        initial_numeric..(initial_numeric + amount - 1)
-        |> Enum.chunk_every(chunk_size)
-        |> Enum.map(fn chunk ->
-          tickets =
-            Enum.map(chunk, &Integer.to_string/1)
-
-          ["SADD", chunk_name | tickets]
-        end)
-      end)
-
-    IO.inspect(time_us / 1000,
-      label: "Time needed to mount the commands (SADD chunk = #{chunk_size})"
-    )
-
-    {time_us, _} = :timer.tc(fn -> TicketEx.Redix.chunked_pipeline(commands) end)
-
-    IO.inspect(time_us / 1000,
-      label: "Time needed to execute the commands (pipeline chunk = 1_000_000)"
-    )
+  def handle_call({:create_tickets, amount, initial_numeric}, _from, state) do
+    TicketdService.create_redis_tickets(amount, initial_numeric)
 
     {:reply, {:ok, [0, amount]}, state}
   end
 
   @impl true
-  def handle_call({:retrieve_tickets, chunk_name, amount}, _from, state) do
-    IO.puts("Retrieving #{amount} tickets in chunk #{chunk_name}")
+  def handle_call({:retrieve_tickets, raffle_id, tenant_id, customer_id, amount}, _from, state) do
+    result = TicketdService.retrieve_tickets(raffle_id, tenant_id, customer_id, amount)
 
-    command = ["SPOP", chunk_name, Integer.to_string(amount)]
-
-    case TicketEx.Redix.command(command) do
-      {:ok, tickets} ->
-        IO.puts("Successfully retrieved #{length(tickets)} tickets from Redis")
-        {:reply, {:ok, tickets}, state}
-
-      {:error, reason} ->
-        IO.puts("Error retrieving tickets from Redis: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
-    end
+    {:reply, result, state}
   end
 end
