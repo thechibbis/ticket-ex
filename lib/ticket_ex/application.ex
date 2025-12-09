@@ -9,6 +9,9 @@ defmodule TicketEx.Application do
   def start(_type, _args) do
     children = [
       TicketEx.Repo,
+      {Ecto.Migrator,
+       repos: Application.fetch_env!(:ticket_ex, :ecto_repos),
+       skip: System.get_env("SKIP_MIGRATIONS") == "true"},
       TicketEx.Redix,
       TicketEx.Ticketd.Supervisor,
       GrpcReflection,

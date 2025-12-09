@@ -7,17 +7,6 @@
 # General application configuration
 import Config
 
-config :ticket_ex,
-  # Redis configuration
-  redis: [
-    user: System.get_env("REDIS_USER", "default"),
-    pass: System.get_env("REDIS_PASS", "123123"),
-    host: System.get_env("REDIS_HOST", "localhost"),
-    port: String.to_integer(System.get_env("REDIS_PORT", "6379")),
-    database: String.to_integer(System.get_env("REDIS_DATABASE", "0")),
-    pool_size: 15
-  ]
-
 config :ticket_ex, ecto_repos: [TicketEx.Repo]
 
 # Configures Elixir's Logger
